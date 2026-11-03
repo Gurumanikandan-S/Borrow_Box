@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BorrowBox - Peer-to-Peer Campus Item Sharing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- HEADER -->
+  <header>
+    <div class="brand" onclick="handleBrandClick()" style="cursor:pointer">
+      <b>BorrowBox</b>
+      <span>Share What You Have. Borrow What You Need.</span>
+    </div>
+    
+    <!-- User Navigation (For Student / Lender & Borrower role) -->
+    <nav id="userNav">
+      <button data-view="explore" class="active" onclick="switchView('explore')">Explore</button>
+      <button data-view="items" onclick="switchView('items')">My Items</button>
+      <button data-view="borrowings" onclick="switchView('borrowings')">My Borrowings</button>
+      <button data-view="requests" onclick="switchView('requests')">Requests <span id="reqBadge" class="nav-badge hidden">0</span></button>
+      <button data-view="notifications" onclick="switchView('notifications')">Notifications <span id="notifBadge" class="nav-badge hidden">0</span></button>
+      <button data-view="profile" onclick="switchView('profile')">Profile</button>
+    </nav>
+
+    <!-- Admin Navigation (For Campus Administrator role) -->
+    <nav id="adminNav" class="hidden">
+      <button data-admin-tab="overview" class="active" onclick="switchAdminTab('overview')">Dashboard</button>
+      <button data-admin-tab="users" onclick="switchAdminTab('users')">Users</button>
+      <button data-admin-tab="listings" onclick="switchAdminTab('listings')">Items</button>
+      <button data-admin-tab="txns" onclick="switchAdminTab('txns')">Transactions</button>
+    </nav>
+
+    <div class="header-actions">
+      <button id="resetDataBtn" class="btn-secondary danger-text" style="padding: 6px 12px; font-size: 12px;" onclick="confirmResetData()" title="Clear all application data and start fresh">🗑️ Reset Data</button>
+      <button id="postOpenBtn" class="primary" onclick="openPostModal()">+ Post Item</button>
+      <div id="userHeaderWidget"></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. AUTHENTICATION VIEW (SIGN IN / CREATE ACCOUNT) -->
+    <section id="auth" class="view">
+      <div class="auth-container">
+        <!-- Auth Highlights Banner -->
+        <div class="auth-banner">
+          <div class="auth-banner-badge">Campus Resource Sharing Ecosystem</div>
+          <h2>Welcome to BorrowBox</h2>
+          <p>The peer-to-peer short-term item sharing platform. Borrow equipment, calculators, textbooks, tools, and gadget accessories safely within your campus.</p>
+          
+          <div class="auth-features">
+            <div class="feature-item">
+              <span class="feature-icon">🤝</span>
+              <div>
+                <strong>One Account • Dual Roles</strong>
+                <p>Every registered student can post items as a Lender and request items as a Borrower.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">⭐</span>
+              <div>
+                <strong>Trust Score & Deposit Protection</strong>
+                <p>Reputation scores and simulated refundable deposits guarantee safe campus returns.</p>
+              </div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">⚡</span>
+              <div>
+                <strong>Dedicated Campus Administration</strong>
+                <p>Campus administrators can monitor platform transactions, users, and safety audits.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auth Form Card -->
+        <div class="auth-card">
+          <div class="auth-tabs">
+            <button class="auth-tab active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
+            <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
+          </div>
+
+          <!-- Sign In Form -->
+          <form id="signInForm" class="auth-form" onsubmit="handleSignIn(event)">
+            <div class="form-header">
+              <h3>Sign in to BorrowBox</h3>
+              <p>Enter your campus email and password to access your account.</p>
+            </div>
+
+            <div class="form-group">
+              <label for="loginEmail">Campus Email</label>
+              <div class="input-wrapper">
+                <span class="input-icon">✉️</span>
+                <input type="email" id="loginEmail" placeholder="e.g. student@kpriet.ac.in" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="loginPassword">Password</label>
+              <div class="input-wrapper">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="loginPassword" placeholder="••••••••" required>
+                <button type="button" class="toggle-pwd" onclick="togglePassword('loginPassword', this)">👁️</button>
+              </div>
+            </div>
+
+            <div class="form-row flex-between">
+              <label class="checkbox-label">
+                <input type="checkbox" id="rememberMe" checked> Remember session
+              </label>
+              <a href="#" class="forgot-link" onclick="toast('Password reset feature simulated.'); return false;">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="primary wide auth-submit-btn">Sign In</button>
+          </form>
+
+          <!-- Sign Up Form -->
+          <form id="signUpForm" class="auth-form hidden" onsubmit="handleSignUp(event)">
+            <div class="form-header">
+              <h3>Create New Account</h3>
+              <p>Register as a Student (Lender & Borrower) or Campus Administrator.</p>
+            </div>
+
+            <div class="form-group">
+              <label for="regName">Full Name</label>
+              <div class="input-wrapper">
+                <span class="input-icon">👤</span>
+                <input type="text" id="regName" placeholder="e.g. Guru Manikandan" required>
+              </div>
+            </div>
+
+            <div class="two">
+              <div class="form-group">
+                <label for="regEmail">Campus Email</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">✉️</span>
+                  <input type="email" id="regEmail" placeholder="student@kpriet.ac.in" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="regPhone">Phone Number</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">📞</span>
+                  <input type="tel" id="regPhone" placeholder="+91 9876543210" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="two">
+              <div class="form-group">
+                <label for="regDept">Department</label>
+                <select id="regDept">
+                  <option value="ECE">ECE</option>
+                  <option value="CSE">CSE</option>
+                  <option value="EEE">EEE</option>
+                  <option value="MECH">MECH</option>
+                  <option value="CIVIL">CIVIL</option>
+                  <option value="AI & DS">AI & DS</option>
+                  <option value="Administration">Campus Administration</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="regCollege">Institution</label>
+                <input type="text" id="regCollege" value="KPR Institute of Engineering & Tech" placeholder="College Name">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="regLoc">Campus Location / Department Area</label>
+              <div class="input-wrapper">
+                <span class="input-icon">📍</span>
+                <input type="text" id="regLoc" placeholder="e.g. ECE Block / Hostel 1" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="regAccountType">Account Type</label>
+              <select id="regAccountType" onchange="toggleAdminCodeInput()">
+                <option value="user" selected>Student / Lender & Borrower</option>
+                <option value="admin">Campus Administrator</option>
+              </select>
+            </div>
+
+            <div class="form-group hidden" id="adminCodeGroup">
+              <label for="regAdminCode">Admin Access Code <span style="color:#ef4444">*</span></label>
+              <div class="input-wrapper">
+                <span class="input-icon">🔑</span>
+                <input type="password" id="regAdminCode" placeholder="Enter BORROWBOX-ADMIN code">
+              </div>
+              <small class="muted">Required code for Administrator account creation: <code>BORROWBOX-ADMIN</code></small>
+            </div>
+
+            <div class="form-group">
+              <label for="regPassword">Password</label>
+              <div class="input-wrapper">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="regPassword" placeholder="At least 6 characters" minlength="6" required>
+                <button type="button" class="toggle-pwd" onclick="togglePassword('regPassword', this)">👁️</button>
+              </div>
+            </div>
+
+            <button type="submit" class="primary wide auth-submit-btn">Register Account</button>
+          </form>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. EXPLORE MARKETPLACE VIEW (LEND & BORROW) -->
+    <section id="explore" class="view">
+      <div class="hero">
+        <div>
+          <small>CAMPUS RESOURCE SHARING ECOSYSTEM</small>
+          <h1>Need something?<br><em>Borrow it nearby.</em></h1>
+          <p>Every registered user can share items as a <strong>Lender</strong> and borrow items as a <strong>Borrower</strong>.</p>
+        </div>
+        <div class="heroStats">
+          <b><span id="exploreItemCount">0</span><small>Items nearby</small></b>
+          <b><span id="userHeroTrust">--</span><small>Your trust score</small></b>
+        </div>
+      </div>
+
+      <!-- Search & Filters Bar -->
+      <div class="search-section">
+        <div class="input-wrapper search-main">
+          <span class="input-icon">🔍</span>
+          <input id="search" placeholder="Search calculators, chargers, HDMI cables, books, tools, headphones..." oninput="renderExploreGrid()">
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="category-pills" id="categoryPills">
+        <button class="cat-pill active" data-cat="all" onclick="selectCategoryFilter('all', this)">All Items</button>
+        <button class="cat-pill" data-cat="study" onclick="selectCategoryFilter('study', this)">📚 Study</button>
+        <button class="cat-pill" data-cat="electronics" onclick="selectCategoryFilter('electronics', this)">🔌 Electronics</button>
+        <button class="cat-pill" data-cat="books" onclick="selectCategoryFilter('books', this)">📘 Books</button>
+        <button class="cat-pill" data-cat="tools" onclick="selectCategoryFilter('tools', this)">🛠️ Tools</button>
+        <button class="cat-pill" data-cat="accessories" onclick="selectCategoryFilter('accessories', this)">🎧 Accessories</button>
+        <button class="cat-pill" data-cat="others" onclick="selectCategoryFilter('others', this)">📦 Others</button>
+      </div>
+
+      <!-- Filter Chips -->
+      <div class="filter-chips">
+        <span class="filter-label">Quick Filters:</span>
+        <button class="chip active" data-filter="all" onclick="selectChipFilter('all', this)">All</button>
+        <button class="chip" data-filter="free" onclick="selectChipFilter('free', this)">Free</button>
+        <button class="chip" data-filter="paid" onclick="selectChipFilter('paid', this)">Paid Rental</button>
+        <button class="chip" data-filter="today" onclick="selectChipFilter('today', this)">Available Today</button>
+        <button class="chip" data-filter="nearby" onclick="selectChipFilter('nearby', this)">Nearby (&lt; 0.5 km)</button>
+      </div>
+
+      <h2>Available Near You</h2>
+      <div id="grid" class="grid"></div>
+    </section>
+
+    <!-- 3. MY ITEMS VIEW -->
+    <section id="items" class="view">
+      <div class="view-header">
+        <div>
+          <h2>My Listed Items</h2>
+          <p class="muted">Manage the items you are sharing with the campus community.</p>
+        </div>
+        <button class="primary" onclick="openPostModal()">+ Post Item</button>
+      </div>
+
+      <!-- Sub-tabs -->
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-tab="my-all" onclick="filterMyItems('all', this)">All Listings</button>
+        <button class="sub-tab" data-tab="my-available" onclick="filterMyItems('available', this)">Available</button>
+        <button class="sub-tab" data-tab="my-borrowed" onclick="filterMyItems('borrowed', this)">Currently Borrowed</button>
+      </div>
+
+      <div id="myGrid" class="grid"></div>
+    </section>
+
+    <!-- 4. MY BORROWINGS VIEW -->
+    <section id="borrowings" class="view">
+      <div class="view-header">
+        <div>
+          <h2>My Borrowing Activity</h2>
+          <p class="muted">Track items you have requested, currently borrowed, or returned.</p>
+        </div>
+      </div>
+
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="filterBorrowings('all', this)">All Activity</button>
+        <button class="sub-tab" onclick="filterBorrowings('Pending', this)">Pending</button>
+        <button class="sub-tab" onclick="filterBorrowings('Approved', this)">Approved</button>
+        <button class="sub-tab" onclick="filterBorrowings('Active', this)">Active Borrowing</button>
+        <button class="sub-tab" onclick="filterBorrowings('Completed', this)">Completed</button>
+      </div>
+
+      <div id="borrowingsContainer" class="activity-list"></div>
+    </section>
+
+    <!-- 5. OWNER INCOMING REQUESTS VIEW -->
+    <section id="requests" class="view">
+      <div class="view-header">
+        <div>
+          <h2>Incoming Borrow Requests</h2>
+          <p class="muted">Review requests from students who want to borrow your listed items.</p>
+        </div>
+      </div>
+
+      <div id="requestsContainer" class="requests-list"></div>
+    </section>
+
+    <!-- 6. NOTIFICATIONS VIEW -->
+    <section id="notifications" class="view">
+      <div class="view-header">
+        <div>
+          <h2>Notifications & Updates</h2>
+          <p class="muted">Stay informed about request approvals, return deadlines, and deposit refunds.</p>
+        </div>
+        <button class="btn-secondary" onclick="markAllNotificationsRead()">Mark all as read</button>
+      </div>
+
+      <div id="notificationsList" class="notifications-feed"></div>
+    </section>
+
+    <!-- 7. USER PROFILE VIEW -->
+    <section id="profile" class="view">
+      <div id="profileContainer"></div>
+    </section>
+
+    <!-- 8. ADMIN CONSOLE VIEW -->
+    <section id="admin" class="view">
+      <div class="admin-header">
+        <div>
+          <h2>Campus Admin Console</h2>
+          <p class="muted">Full platform oversight, user directory management, and transaction audit trail.</p>
+        </div>
+        <button class="btn-secondary" onclick="toast('System audit log exported!')">📥 Export Audit Report</button>
+      </div>
+
+      <!-- Admin Sub-tabs -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" id="btnAdminOverview" onclick="switchAdminTab('overview', this)">📊 Overview Stats</button>
+        <button class="admin-tab" id="btnAdminUsers" onclick="switchAdminTab('users', this)">👥 User Directory</button>
+        <button class="admin-tab" id="btnAdminListings" onclick="switchAdminTab('listings', this)">📦 Item Listings</button>
+        <button class="admin-tab" id="btnAdminTxns" onclick="switchAdminTab('txns', this)">🔄 Transactions Audit</button>
+      </div>
+
+      <!-- Dashboard / Overview Stats Tab -->
+      <div id="adminTabOverview" class="admin-tab-content">
+        <div class="admin-stats-grid">
+          <div class="admin-stat-card">
+            <small>Total Registered Users</small>
+            <strong id="adminStatTotalUsers">0</strong>
+            <span class="stat-trend positive">Campus Directory</span>
+          </div>
+          <div class="admin-stat-card">
+            <small>Active Users</small>
+            <strong id="adminStatActiveUsers">0</strong>
+            <span class="stat-trend positive">Verified Accounts</span>
+          </div>
+          <div class="admin-stat-card">
+            <small>Total Listed Items</small>
+            <strong id="adminStatTotalItems">0</strong>
+            <span class="stat-trend">Shared Resources</span>
+          </div>
+          <div class="admin-stat-card">
+            <small>Active Borrowings</small>
+            <strong id="adminStatActiveBorrowings">0</strong>
+            <span class="stat-trend positive">Ongoing Shared Items</span>
+          </div>
+          <div class="admin-stat-card">
+            <small>Completed Transactions</small>
+            <strong id="adminStatCompletedTxns">0</strong>
+            <span class="stat-trend positive">⭐ Completed Cycles</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Directory Tab -->
+      <div id="adminTabUsers" class="admin-tab-content hidden">
+        <div class="admin-toolbar">
+          <div class="input-wrapper search-box">
+            <span class="input-icon">🔍</span>
+            <input type="text" id="adminSearchUsers" placeholder="Search user by name or email..." oninput="renderAdmin()">
+          </div>
+          <select id="adminFilterRole" onchange="renderAdmin()">
+            <option value="all">All Roles</option>
+            <option value="user">Student (Lender & Borrower)</option>
+            <option value="admin">Campus Administrator</option>
+          </select>
+          <select id="adminFilterStatus" onchange="renderAdmin()">
+            <option value="all">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Suspended">Suspended</option>
+          </select>
+        </div>
+
+        <div class="panel table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Department & College</th>
+                <th>Role</th>
+                <th>Listed / Borrowed</th>
+                <th>Trust Score</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Item Management Tab -->
+      <div id="adminTabListings" class="admin-tab-content hidden">
+        <div class="panel table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>Owner</th>
+                <th>Category</th>
+                <th>Location</th>
+                <th>Rental & Deposit</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminListingsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Transactions Monitoring Tab -->
+      <div id="adminTabTxns" class="admin-tab-content hidden">
+        <div class="panel table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Lender</th>
+                <th>Borrower</th>
+                <th>Rental Fee</th>
+                <th>Deposit</th>
+                <th>Duration</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="adminTxnsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL 1: POST ITEM MODAL -->
+  <div id="modal" class="modal hidden">
+    <div class="modalBox">
+      <div class="modalTop">
+        <h3>+ Post an Item to Share</h3>
+        <button onclick="closeModal('modal')">×</button>
+      </div>
+      <form id="postItemForm" onsubmit="handlePostItemSubmit(event)">
+        <label>Item Name <span style="color:#ef4444">*</span>
+          <input id="name" required placeholder="e.g. Scientific Calculator FX-991EX">
+        </label>
+        
+        <div class="two">
+          <label>Category
+            <select id="cat">
+              <option value="study">📚 Study</option>
+              <option value="electronics">🔌 Electronics</option>
+              <option value="books">📘 Books</option>
+              <option value="tools">🛠️ Tools</option>
+              <option value="accessories">🎧 Accessories</option>
+              <option value="others">📦 Others</option>
+            </select>
+          </label>
+          <label>Condition
+            <select id="cond">
+              <option value="Excellent">Brand New / Excellent</option>
+              <option value="Good" selected>Good Condition</option>
+              <option value="Fair">Fair / Usable</option>
+            </select>
+          </label>
+        </div>
+
+        <label>Item Description
+          <textarea id="desc" rows="2" placeholder="Describe item condition, accessories included, or instructions..."></textarea>
+        </label>
+        
+        <div class="two">
+          <label>Campus Location <span style="color:#ef4444">*</span>
+            <input id="loc" required placeholder="e.g. ECE Block / Hostel 1">
+          </label>
+          <label>Availability Schedule <span style="color:#ef4444">*</span>
+            <input id="avail" required placeholder="e.g. Today 4 PM – 8 PM">
+          </label>
+        </div>
+
+        <div class="two">
+          <label>Borrowing Duration
+            <input id="duration" placeholder="e.g. 1 - 3 days" value="1 - 3 days">
+          </label>
+          <label>Pricing Mode
+            <select id="mode" onchange="togglePriceInputs()">
+              <option value="free">Free Share</option>
+              <option value="paid">Paid Rental</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="two" id="priceRow">
+          <label>Rental Price / day ₹
+            <input id="price" type="number" value="0" min="0">
+          </label>
+          <label>Refundable Deposit ₹
+            <input id="deposit" type="number" value="50" min="0">
+          </label>
+        </div>
+
+        <button type="submit" class="primary wide" style="margin-top:16px;">Publish Item Listing</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: ITEM DETAILS VIEW MODAL -->
+  <div id="itemDetailsModal" class="modal hidden">
+    <div class="modalBox" style="width: min(640px, 94%);">
+      <div class="modalTop">
+        <h3>Item Details</h3>
+        <button onclick="closeModal('itemDetailsModal')">×</button>
+      </div>
+      <div id="itemDetailsContent"></div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: BORROW REQUEST & SIMULATED PAYMENT MODAL -->
+  <div id="borrowRequestModal" class="modal hidden">
+    <div class="modalBox">
+      <div class="modalTop">
+        <h3>Request to Borrow Item</h3>
+        <button onclick="closeModal('borrowRequestModal')">×</button>
+      </div>
+      <form id="borrowRequestForm" onsubmit="handleBorrowRequestSubmit(event)">
+        <div id="borrowRequestItemSummary" class="panel" style="margin-bottom:14px; background:#f8fafc;"></div>
+        
+        <div class="two">
+          <label>Start Date
+            <input type="date" id="reqStartDate" required>
+          </label>
+          <label>Duration (Days)
+            <input type="number" id="reqDuration" value="2" min="1" max="14" onchange="calcBorrowTotal()" oninput="calcBorrowTotal()" required>
+          </label>
+        </div>
+
+        <label>Optional Message to Owner
+          <input type="text" id="reqMessage" placeholder="e.g. Need calculator for semester exam on Friday.">
+        </label>
+
+        <!-- Payment Breakdown Calculation Card -->
+        <div class="payment-card">
+          <h4>Payment & Security Deposit Summary (Simulated)</h4>
+          <div class="pay-row"><span>Rental Fee (<span id="payDays">2</span> days × ₹<span id="payRate">20</span>/day):</span><strong id="payRentalTotal">₹40</strong></div>
+          <div class="pay-row"><span>Refundable Security Deposit:</span><strong id="payDepositTotal">₹100</strong></div>
+          <div class="pay-row total"><span>Total Payment Due:</span><strong id="payGrandTotal">₹140</strong></div>
+          <small class="muted" style="display:block; margin-top:6px;">* The ₹<span id="payDepositNotice">100</span> security deposit will be automatically refunded upon returning the item.</small>
+        </div>
+
+        <button type="submit" class="primary wide" style="margin-top:16px;">Confirm Borrow Request & Payment</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: RATING & REVIEWS MODAL -->
+  <div id="ratingModal" class="modal hidden">
+    <div class="modalBox">
+      <div class="modalTop">
+        <h3>Rate Transaction & Update Trust</h3>
+        <button onclick="closeModal('ratingModal')">×</button>
+      </div>
+      <form id="ratingForm" onsubmit="handleRatingSubmit(event)">
+        <div id="ratingTargetSummary" style="margin-bottom:16px;"></div>
+        
+        <label>Star Rating</label>
+        <div class="star-picker" id="starPicker">
+          <span class="star active" data-rating="1" onclick="setStarRating(1)">★</span>
+          <span class="star active" data-rating="2" onclick="setStarRating(2)">★</span>
+          <span class="star active" data-rating="3" onclick="setStarRating(3)">★</span>
+          <span class="star active" data-rating="4" onclick="setStarRating(4)">★</span>
+          <span class="star active" data-rating="5" onclick="setStarRating(5)">★</span>
+        </div>
+
+        <label>Optional Review
+          <textarea id="ratingReview" rows="3" placeholder="Write a short review (e.g. Returned on time and in good condition)..."></textarea>
+        </label>
+
+        <button type="submit" class="primary wide" style="margin-top:16px;">Submit Review & Complete</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 5: EDIT PROFILE MODAL -->
+  <div id="editProfileModal" class="modal hidden">
+    <div class="modalBox">
+      <div class="modalTop">
+        <h3>Edit Profile Details</h3>
+        <button onclick="closeModal('editProfileModal')">×</button>
+      </div>
+      <form id="editProfileForm" onsubmit="handleEditProfileSubmit(event)">
+        <label>Full Name<input id="editName" required></label>
+        <div class="two">
+          <label>Department<input id="editDept" required></label>
+          <label>Campus Location<input id="editLoc" required></label>
+        </div>
+        <label>Institution<input id="editCollege" required></label>
+        <label>Phone Number<input id="editPhone" required></label>
+        <button type="submit" class="primary wide" style="margin-top:16px;">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="app.js"></script>
+</body>
+</html>
